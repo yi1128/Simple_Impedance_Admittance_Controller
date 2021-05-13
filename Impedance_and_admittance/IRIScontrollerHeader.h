@@ -104,24 +104,46 @@ int Enque(Queue *q, float x) {
     return 0;
 }
 
-float out_value(Queue *q, int i){
-    int k = q->rear - i - 1;
+float out_value_front(Queue *q, int i) {
 
-    if (k < 0){
-        k = q->max + k;
+    int k = q->front + i;
+    if (k >= q->max) {
+        k = k - q->max;
     }
-    if (q->num <= i){
+    if (q->num <= i) {
         return 0;
     }
-    else{
+    else {
         return q->que[k];
     }
 }
+
+float out_value_rear(Queue *q, int i) {
+    if (q->num <= 0)
+        return -1;
+    else {
+        int k = q->rear - i - 1;
+        if (k < 0) {
+            return q->que[q->max + k];
+        }
+        else {
+            return q->que[k];
+        }
+    }
+}
+
 float back(Queue *q) {
     if (q->num <= 0)
         return -1;
-    else
-        return q->que[q->rear];
+    else {
+        if (q->rear - 1 < 0) {
+            return q->que[q->max - 1];
+        }
+        else {
+            return q->que[q->rear - 1];
+        }
+
+    }
 }
 
 float front(Queue *q) {
@@ -208,21 +230,21 @@ void Impedance_controller(Im_Structure *Im_main, AWFilter *Filt_velo, Queue *q_p
           Filt_velo->sum_b = 0.0;
 
           for(i=0;i<Filt_velo->n;i++){
-              Filt_velo->sum_a = Filt_velo->sum_a + out_value(q_pos,i);
-              Filt_velo->sum_b = Filt_velo->sum_b + i * out_value(q_pos,i);
+              Filt_velo->sum_a = Filt_velo->sum_a + out_value_rear(q_pos,i);
+              Filt_velo->sum_b = Filt_velo->sum_b + i * out_value_rear(q_pos,i);
           }
           Filt_velo->bn = (Filt_velo->n * Filt_velo->sum_a - 2 * Filt_velo->sum_b)/(Filt_velo->n*(Filt_velo->n+1)*(Filt_velo->n+2)/6.0);
           i = 0;
           for(i=1;i<Filt_velo->n-1;i++){
               Filt_velo->pos_L = back(q_pos) - Filt_velo->bn*i;
               //Enque(&q_pos_L,pos_L);
-              if(fabs(out_value(q_pos,i) - Filt_velo->pos_L) > Filt_velo->d){
+              if(fabs(out_value_rear(q_pos,i) - Filt_velo->pos_L) > Filt_velo->d){
                   Filt_velo->filter_off = true;
               }
           }
       }
 
-      Im_main->Im_x_dot = (back(q_pos) - out_value(q_pos,Filt_velo->n - 1))/((Filt_velo->n - 1) * Filt_velo->Dt);
+      Im_main->Im_x_dot = (back(q_pos) - out_value_rear(q_pos,Filt_velo->n - 1))/((Filt_velo->n - 1) * Filt_velo->Dt);
     }else{
       Im_main->Im_x_dot = Im_main->Im_velo;
     }
@@ -242,19 +264,19 @@ void Impedance_controller(Im_Structure *Im_main, AWFilter *Filt_velo, Queue *q_p
             Filt_acc->sum_b = 0.0;
 
             for(j=0;j<Filt_acc->n;j++){
-                Filt_acc->sum_a = Filt_acc->sum_a + out_value(q_vel,j);
-                Filt_acc->sum_b = Filt_acc->sum_b + j * out_value(q_vel,j);
+                Filt_acc->sum_a = Filt_acc->sum_a + out_value_rear(q_vel,j);
+                Filt_acc->sum_b = Filt_acc->sum_b + j * out_value_rear(q_vel,j);
             }
             Filt_acc->bn = (Filt_acc->n * Filt_acc->sum_a - 2 * Filt_acc->sum_b)/(Filt_acc->n * (Filt_acc->n+1) * (Filt_acc->n+2)/6.0);
             j = 0;
             for(j=1;j<Filt_acc->n-1;j++){
                 Filt_acc->vel_L = back(q_vel) - Filt_acc->bn*j;
-                if(fabs(out_value(q_vel,j) - Filt_acc->vel_L) > Filt_acc->d){
+                if(fabs(out_value_rear(q_vel,j) - Filt_acc->vel_L) > Filt_acc->d){
                     Filt_acc->filter_off = true;
                 }
             }
         }
-        Im_main->Im_acc = (back(q_vel) - out_value(q_vel, Filt_acc->n-1))/((Filt_acc->n-1) * Filt_acc->Dt);
+        Im_main->Im_acc = (back(q_vel) - out_value_rear(q_vel, Filt_acc->n-1))/((Filt_acc->n-1) * Filt_acc->Dt);
     }
     else{
         Im_main->Im_acc = (Im_main->Im_x_dot - Im_main->Im_x_dot0) / INT_DT;
