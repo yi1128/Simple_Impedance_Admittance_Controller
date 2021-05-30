@@ -1,4 +1,4 @@
-# Simple_Impedance_Addmitance_Controller
+# Simple_Impedance_Admittance_Controller
 
 
 ### Impedance Controller
